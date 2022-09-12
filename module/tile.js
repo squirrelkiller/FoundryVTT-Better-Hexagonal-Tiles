@@ -1,8 +1,7 @@
 export class BHTTile extends Tile {
-
     _getTileOffset() {
-        const aw = Math.abs(this.data.width);
-        const ah = Math.abs(this.data.height);
+        const aw = Math.abs(this.document.width);
+        const ah = Math.abs(this.document.height);
         const apo = 0.5 / Math.tan(Math.PI / 6);
         if ([CONST.GRID_TYPES.HEXODDQ, CONST.GRID_TYPES.HEXEVENQ].includes(canvas.grid.type)) {
             return [aw / 2, ah * apo / 2];
@@ -13,37 +12,40 @@ export class BHTTile extends Tile {
         }
     }
 
-    refresh() {
-        const r = Math.toRadians(this.data.rotation);
+    /** @override */
+    _refresh() {
+        const w = this.document.width;
+        const h = this.document.height;
+        const r = Math.toRadians(this.document.rotation);
 
         // Update tile appearance
-        this.position.set(this.data.x, this.data.y);
+        this.position.set(this.document.x, this.document.y);
         if (this.tile) {
 
-            // Tile position
-            this.tile.scale.x = this.data.width / this.texture.width;
-            this.tile.scale.y = this.data.height / this.texture.height;
+            this.tile.scale.x = w / this.texture.width;
+            this.tile.scale.y = h / this.texture.height;
             this.tile.position.set(...this._getTileOffset());
             this.tile.rotation = r;
 
             // Tile appearance
-            this.tile.alpha = this.data.hidden ? Math.min(0.5, this.data.alpha) : this.data.alpha;
-            this.tile.tint = this.data.tint ? foundry.utils.colorStringToHex(this.data.tint) : 0xFFFFFF;
+            this.tile.alpha = this.document.hidden ? Math.min(0.5, this.document.alpha) : this.document.alpha;
+            this.tile.tint = this.mesh.tint ? foundry.utils.colorStringToHex(this.mesh.tint) : 0xFFFFFF;
         }
 
+        if ( this.mesh ) this.mesh.refresh();
+
         // Temporary tile background
-        if (this.bg) this.bg.clear().beginFill(0xFFFFFF, 0.5).drawRect(0, 0, this.data.width, this.data.height).endFill();
+        if (this.bg) this.bg.clear().beginFill(0xFFFFFF, 0.5).drawRect(0, 0, w, h).endFill();
 
         // Define bounds and update the border frame
-        let bounds = (this.data.width === this.data.height) ?
-            new NormalizedRectangle(0, 0, this.data.width, this.data.height) : // Square tiles
-            NormalizedRectangle.fromRotation(0, 0, this.data.width, this.data.height, r); // Non-square tiles
+        let bounds = (w === h) ?
+            new NormalizedRectangle(0, 0, w, h) : // Square tiles
+            NormalizedRectangle.fromRotation(0, 0, w, h, r); // Non-square tiles
         this.hitArea = this._controlled ? bounds.clone().pad(20) : bounds;
         this._refreshBorder(bounds);
         this._refreshHandle(bounds);
 
         // Set visibility
-        this.visible = !this.data.hidden || game.user.isGM;
-        return this;
+        this.visible = !this.document.hidden || game.user.isGM;
     }
 }
